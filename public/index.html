@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Learning</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-text-primary: #f0f0f0;
+    --color-text-secondary: #9ca3af;
+    --color-text-tertiary: #6b7280;
+    --color-background-primary: #1e1f24;
+    --color-background-secondary: #2a2b31;
+    --color-border-primary: #4b5563;
+    --color-border-secondary: #374151;
+    --color-border-tertiary: #2d2e35;
+    --color-accent: #4CAF7D;
+    --font-sans: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --border-radius-md: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); background: #13141a; min-height: 100vh; color: var(--color-text-primary); }
+
+  /* ── Login Screen ── */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem;
+  }
+  .login-card {
+    background: var(--color-background-primary);
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  }
+  .login-logo { font-size: 2.5rem; margin-bottom: 1rem; }
+  .login-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; }
+  .login-sub { font-size: 0.82rem; color: var(--color-text-secondary); margin-bottom: 2rem; line-height: 1.5; }
+  .google-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 11px 20px;
+    background: #fff; color: #1f1f1f;
+    border: none; border-radius: 8px;
+    font-size: 0.9rem; font-weight: 500; font-family: var(--font-sans);
+    cursor: pointer; transition: all .15s;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  .google-btn:hover { background: #f5f5f5; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  .google-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .login-note { font-size: 0.72rem; color: var(--color-text-tertiary); margin-top: 1.2rem; }
+
+  /* ── App Screen ── */
+  #app-screen { display: none; }
+  .app-wrapper { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .page-title { font-size: 1.4rem; font-weight: 600; letter-spacing: -0.3px; }
+  .user-area { display: flex; align-items: center; gap: 8px; }
+  .user-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1.5px solid var(--color-border-secondary);
+    object-fit: cover; cursor: pointer;
+  }
+  .user-avatar-placeholder {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--color-background-secondary);
+    border: 1.5px solid var(--color-border-secondary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; cursor: pointer;
+  }
+  .signout-btn {
+    font-size: 0.72rem; padding: 4px 10px;
+    border-radius: 6px; border: 1px solid var(--color-border-secondary);
+    background: transparent; color: var(--color-text-tertiary);
+    cursor: pointer; font-family: var(--font-sans); transition: all .12s;
+  }
+  .signout-btn:hover { color: var(--color-text-primary); background: var(--color-background-secondary); }
+
+  /* ── Sync indicator ── */
+  .sync-bar {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.7rem; color: var(--color-text-tertiary);
+    margin-bottom: 1rem; min-height: 18px;
+  }
+  .sync-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--color-text-tertiary);
+    transition: background .3s;
+  }
+  .sync-dot.syncing { background: #fbbf24; animation: pulse .8s infinite; }
+  .sync-dot.synced  { background: #4ade80; }
+  .sync-dot.error   { background: #f87171; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .page-sub { font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 1.4rem; }
+
+  /* ── Date row ── */
+  .date-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1.6rem; background: var(--color-background-primary);
+    border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md);
+    padding: 10px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  }
+  .date-badge {
+    font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: 6px;
+    background: var(--color-background-secondary); color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-tertiary); white-space: nowrap; font-family: var(--font-mono);
+  }
+  .pw { flex: 1; height: 5px; background: var(--color-border-tertiary); border-radius: 3px; overflow: hidden; }
+  .pb { height: 100%; background: var(--color-accent); border-radius: 3px; transition: width .4s ease; }
+  .pl { font-size: 0.75rem; color: var(--color-text-secondary); min-width: 36px; text-align: right; font-family: var(--font-mono); font-weight: 500; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 1.4rem;
+    background: var(--color-background-primary);
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md); padding: 4px;
+  }
+  .tab-btn {
+    flex: 1; padding: 7px 0; font-size: 0.8rem; font-weight: 500;
+    font-family: var(--font-sans); border: none; border-radius: 6px;
+    background: transparent; color: var(--color-text-secondary); cursor: pointer; transition: all .15s;
+  }
+  .tab-btn.active { background: var(--color-background-secondary); color: var(--color-text-primary); }
+  #history-panel { display: none; }
+  #today-panel   { display: block; }
+
+  /* ── Section card ── */
+  .section { margin-bottom: 0.85rem; }
+  .section-card {
+    background: var(--color-background-primary);
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 1px 4px rgba(0,0,0,.3); overflow: hidden;
+  }
+  .sh { display: flex; align-items: center; gap: 7px; padding: 10px 13px; background: var(--color-background-primary); cursor: default; }
+  .si { font-size: 15px; width: 22px; text-align: center; flex-shrink: 0; }
+  .stw { flex: 1; display: flex; align-items: center; gap: 6px; cursor: pointer; min-width: 0; overflow: hidden; }
+  .st { font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 5px; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.1px; }
+  .tb { background: #1a3a5c; color: #60a5fa; }
+  .tg { background: #1a3a25; color: #4ade80; }
+  .tp { background: #2d1f5e; color: #a78bfa; }
+  .ta { background: #3d2a0a; color: #fbbf24; }
+  .tz { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+  .sm { font-size: 0.72rem; color: var(--color-text-secondary); flex-shrink: 0; font-family: var(--font-mono); }
+  .ib { background: none; border: none; cursor: pointer; padding: 3px 5px; border-radius: 5px; color: var(--color-text-tertiary); font-size: 12px; line-height: 1; flex-shrink: 0; transition: all .12s; }
+  .ib:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+  .ib.d:hover { background: #2d1515; color: #f87171; }
+  .chev { font-size: 10px; color: var(--color-text-tertiary); cursor: pointer; transition: transform .2s; flex-shrink: 0; }
+  .chev.o { transform: rotate(180deg); }
+  .sb { border-top: 1px solid var(--color-border-tertiary); }
+
+  /* ── Task row ── */
+  .tr {
+    display: flex; align-items: flex-start; gap: 9px; padding: 9px 13px;
+    background: var(--color-background-primary);
+    border-top: 1px solid var(--color-border-tertiary); transition: background .1s;
+  }
+  .tr:first-child { border-top: none; }
+  .tr:hover { background: var(--color-background-secondary); }
+  .tr.dn .tt { text-decoration: line-through; color: var(--color-text-tertiary); }
+  .tr.dn .ts2 { color: var(--color-text-tertiary); }
+  .cb {
+    width: 17px; height: 17px; border-radius: 4px;
+    border: 1.5px solid var(--color-border-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; margin-top: 1px; transition: all .15s;
+  }
+  .cb.ck { border-color: transparent; background: var(--color-accent); }
+  .cb.ck::after { content: ''; width: 4px; height: 8px; border: 2px solid #fff; border-left: none; border-top: none; transform: rotate(45deg) translateY(-1px); display: block; }
+  .tc { flex: 1; cursor: pointer; min-width: 0; }
+  .tt { font-size: 0.825rem; color: var(--color-text-primary); line-height: 1.45; }
+  .ts2 { font-size: 0.72rem; color: var(--color-text-secondary); margin-top: 2px; }
+  .tm { font-size: 0.72rem; color: var(--color-text-secondary); flex-shrink: 0; padding-top: 3px; white-space: nowrap; font-family: var(--font-mono); }
+  .ra { display: flex; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .12s; }
+  .tr:hover .ra { opacity: 1; }
+
+  /* ── Forms ── */
+  .eform { display: none; padding: 10px 13px; background: var(--color-background-secondary); border-top: 1px solid var(--color-border-tertiary); flex-direction: column; gap: 7px; }
+  .eform.v { display: flex; }
+  .sef { display: none; padding: 10px 13px; background: var(--color-background-secondary); border-top: 1px solid var(--color-border-tertiary); flex-direction: column; gap: 8px; }
+  .sef.v { display: flex; }
+  .af { display: none; padding: 10px 13px; border-top: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); flex-direction: column; gap: 7px; }
+  .af.v { display: flex; }
+  .arb { display: flex; align-items: center; padding: 8px 13px; border-top: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); }
+  .aib { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--color-text-tertiary); background: none; border: none; cursor: pointer; padding: 0; font-family: var(--font-sans); transition: color .12s; }
+  .aib:hover { color: var(--color-text-primary); }
+  .fr { display: flex; gap: 8px; align-items: center; }
+  .fi { flex: 1; font-size: 0.8rem; padding: 6px 10px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); min-width: 0; font-family: var(--font-sans); transition: border-color .12s; }
+  .fi:focus { outline: none; border-color: var(--color-border-primary); }
+  .fis { width: 88px; font-size: 0.8rem; padding: 6px 10px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); font-family: var(--font-sans); }
+  .fis:focus { outline: none; }
+  .sel { font-size: 0.75rem; padding: 5px 8px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); font-family: var(--font-sans); }
+  .isel { width: 60px; font-size: 0.8rem; padding: 5px 6px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); font-family: var(--font-sans); }
+  .bs { font-size: 0.75rem; padding: 5px 14px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; white-space: nowrap; font-family: var(--font-sans); transition: background .12s; }
+  .bs:hover { background: var(--color-background-secondary); }
+  .bc { font-size: 0.75rem; padding: 5px 10px; border-radius: var(--border-radius-md); border: none; background: none; color: var(--color-text-secondary); cursor: pointer; font-family: var(--font-sans); }
+  .bc:hover { color: var(--color-text-primary); }
+  .fh { font-size: 0.7rem; color: var(--color-text-tertiary); flex: 1; }
+
+  /* ── Add section ── */
+  .nsb { display: flex; align-items: center; gap: 7px; width: 100%; padding: 10px 14px; border-radius: var(--border-radius-md); border: 1.5px dashed var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-size: 0.825rem; margin-top: 0.5rem; font-family: var(--font-sans); transition: all .15s; }
+  .nsb:hover { background: var(--color-background-secondary); color: var(--color-text-primary); border-style: solid; border-color: var(--color-border-primary); }
+  .nsf { display: none; margin-top: .6rem; padding: 13px 15px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary); background: var(--color-background-primary); flex-direction: column; gap: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+  .nsf.v { display: flex; }
+
+  /* ── Bottom ── */
+  .rb { display: flex; justify-content: flex-end; margin-top: 1.25rem; }
+  .ab { font-size: 0.75rem; padding: 5px 14px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-secondary); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-family: var(--font-sans); transition: all .12s; }
+  .ab:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+
+  /* ── Week streak ── */
+  .sl { font-size: 0.72rem; color: var(--color-text-secondary); margin-bottom: 6px; margin-top: 1.4rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .sr { display: flex; gap: 5px; }
+  .sd { width: 28px; height: 28px; border-radius: 6px; background: var(--color-background-secondary); border: 1px solid var(--color-border-tertiary); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--color-text-tertiary); font-weight: 600; font-family: var(--font-mono); position: relative; }
+  .sd.dn { background: #1a3a25; border-color: #2d6a3f; color: #4ade80; }
+  .sd.today { border: 2px solid #4CAF7D; color: #4CAF7D; }
+  .sd.today.dn { background: #1a3a25; border-color: #4CAF7D; color: #4ade80; }
+
+  /* ── History ── */
+  .hist-day { margin-bottom: 1rem; border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden; background: var(--color-background-primary); box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+  .hist-day-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; background: var(--color-background-secondary); cursor: pointer; border-bottom: 1px solid var(--color-border-tertiary); }
+  .hist-day-label { font-size: 0.8rem; font-weight: 600; color: var(--color-text-primary); font-family: var(--font-mono); }
+  .hist-day-score { font-size: 0.72rem; font-family: var(--font-mono); color: var(--color-text-secondary); }
+  .hist-day-score.perfect { color: #4ade80; }
+  .hist-body { padding: 6px 0; }
+  .hist-sec-title { font-size: 0.7rem; font-weight: 600; color: var(--color-text-tertiary); padding: 6px 14px 2px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .hist-task { display: flex; align-items: center; gap: 9px; padding: 4px 14px; }
+  .hist-cb { width: 15px; height: 15px; border-radius: 3px; border: 1.5px solid var(--color-border-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .hist-cb.ck { background: var(--color-accent); border-color: transparent; }
+  .hist-cb.ck::after { content: ''; width: 3px; height: 7px; border: 2px solid #fff; border-left: none; border-top: none; transform: rotate(45deg) translateY(-1px); display: block; }
+  .hist-task-text { font-size: 0.8rem; color: var(--color-text-secondary); flex: 1; }
+  .hist-task-text.ck { text-decoration: line-through; color: var(--color-text-tertiary); }
+  .hist-collapsed .hist-body { display: none; }
+  .hist-chev { font-size: 10px; color: var(--color-text-tertiary); transition: transform .2s; }
+  .hist-collapsed .hist-chev { transform: rotate(-90deg); }
+  .hist-empty { padding: 2.5rem; text-align: center; font-size: 0.82rem; color: var(--color-text-tertiary); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN SCREEN ══════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">📚</div>
+    <div class="login-title">Daily Learning</div>
+    <div class="login-sub">Track your learning every day.<br>Sign in to sync across all your devices.</div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Continue with Google
+    </button>
+    <div class="login-note">Your data is saved to your account and syncs across devices.</div>
+  </div>
+</div>
+
+<!-- ══════════════ APP SCREEN ══════════════ -->
+<div id="app-screen">
+  <div class="app-wrapper">
+
+    <div class="topbar">
+      <div class="page-title">Daily Learning</div>
+      <div class="user-area">
+        <img id="user-photo" class="user-avatar" src="" alt="" style="display:none" title="Signed in">
+        <div id="user-initials" class="user-avatar-placeholder" title="Signed in"></div>
+        <button class="signout-btn" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+
+    <div class="sync-bar">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Connecting…</span>
+    </div>
+
+    <div class="page-sub" id="dsub"></div>
+
+    <div class="date-row">
+      <div class="date-badge" id="dbadge"></div>
+      <div class="pw"><div class="pb" id="pbar" style="width:0%"></div></div>
+      <div class="pl" id="plbl">0/0</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-today"   onclick="switchTab('today')">📋 Today</button>
+      <button class="tab-btn"        id="tab-history" onclick="switchTab('history')">🕓 History</button>
+    </div>
+
+    <!-- Today panel -->
+    <div id="today-panel">
+      <div id="secs"></div>
+      <button class="nsb" id="nsbtn" onclick="showNSF()"><span style="font-size:17px;line-height:1">+</span> Add new section</button>
+      <div class="nsf" id="nsform">
+        <div class="fr">
+          <select class="isel" id="ns-ic">
+            <option>📝</option><option>⭐</option><option>🔥</option><option>💡</option><option>🎯</option><option>🛠</option><option>📖</option><option>🎓</option><option>📱</option><option>🤖</option><option>📚</option><option>🏋</option><option>🧠</option><option>💼</option><option>🚀</option>
+          </select>
+          <input class="fi" id="ns-ti" placeholder="Section title..." onkeydown="nsKey(event)">
+          <select class="sel" id="ns-tc">
+            <option value="tb">Blue</option><option value="ta">Amber</option><option value="tp">Purple</option><option value="tg">Green</option><option value="tz">Gray</option>
+          </select>
+          <input class="fi" id="ns-tg" placeholder="Tag..." style="max-width:90px" onkeydown="nsKey(event)">
+        </div>
+        <div class="fr"><span class="fh">Enter to save · Esc to cancel</span><button class="bc" onclick="hideNSF()">Cancel</button><button class="bs" onclick="saveNS()">Add section</button></div>
+      </div>
+      <div class="rb"><button class="ab" onclick="resetToday()">Reset today</button></div>
+    </div>
+
+    <!-- History panel -->
+    <div id="history-panel">
+      <div id="hist-list"></div>
+    </div>
+
+    <div class="sl">This week</div>
+    <div class="sr" id="srow"></div>
+  </div>
+</div>
+
+<!-- ══════════════ FIREBASE ══════════════ -->
+<script type="module">
+import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
+                                                   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, onSnapshot }
+                                                   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ─────────────────────────────────────────
+// 🔧 PASTE YOUR FIREBASE CONFIG HERE
+//    (from Firebase Console → Project Settings → Your Apps)
+// ─────────────────────────────────────────
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDu-Z1AL45huaPDNtGSX4AST02_HM666D8",
+  authDomain: "mytodo-36bd3.firebaseapp.com",
+  projectId: "mytodo-36bd3",
+  storageBucket: "mytodo-36bd3.firebasestorage.app",
+  messagingSenderId: "347124847909",
+  appId: "1:347124847909:web:70f5b897d28967f2d0f6cc",
+  measurementId: "G-5GQS0LTNSY"
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const now    = new Date();
+const TODAY  = now.toISOString().slice(0,10); // YYYY-MM-DD
+
+let currentUser = null;
+let syncTimeout = null;
+
+// ── Default tasks ──────────────────────
+const DEFAULT_TASKS = [
+  {id:'tws', icon:'🎓', title:'TrainWithShubham', tag:'course', tc:'tb', items:[
+    {id:'tws1', text:'Watch course video',              sub:'Minimum 1 hour of content',    time:'1 hr'},
+    {id:'tws2', text:'Take notes / practice commands',  sub:'Hands-on lab or summary notes',time:''}]},
+  {id:'dm',  icon:'📱', title:'Digital Marketing',     tag:'video',   tc:'ta', items:[
+    {id:'dm1', text:'Watch at least 1 video',           sub:'Any module — just stay consistent', time:'1 video'}]},
+  {id:'ai',  icon:'🤖', title:'AI-Assisted DevOps',    tag:'video',   tc:'tp', items:[
+    {id:'ai1', text:'Watch at least 1 video',           sub:'Keep up with the course pace', time:'1 video'}]},
+  {id:'read',icon:'📚', title:'Reading / Books',       tag:'reading', tc:'tg', items:[
+    {id:'rd1', text:'Read course book or resource',     sub:'Minimum 1–2 hours of focused reading', time:'1–2 hr'},
+    {id:'rd2', text:'Write down 1 key insight',         sub:'Summarise what you learnt today', time:''}]}
+];
+
+// ── UI helpers ─────────────────────────
+function setSyncStatus(status, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + status;
+  lbl.textContent = label;
+}
+
+function uid() { return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function totI(tasks) { let n=0; tasks.forEach(s=>n+=s.items.length); return n; }
+function cntD(tasks, state) { let n=0; tasks.forEach(s=>s.items.forEach(i=>{ if(state[i.id]) n++; })); return n; }
+
+// ── Firestore paths ────────────────────
+// users/{uid}/meta/tasks        → task definitions
+// users/{uid}/days/{YYYY-MM-DD} → daily completion state
+
+async function loadTasks() {
+  const ref = doc(db, 'users', currentUser.uid, 'meta', 'tasks');
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data().list : JSON.parse(JSON.stringify(DEFAULT_TASKS));
+}
+
+async function saveTasks(list) {
+  setSyncStatus('syncing', 'Saving…');
+  const ref = doc(db, 'users', currentUser.uid, 'meta', 'tasks');
+  await setDoc(ref, { list });
+  setSyncStatus('synced', 'Saved');
+}
+
+async function loadState(dateStr) {
+  const ref = doc(db, 'users', currentUser.uid, 'days', dateStr);
+  const snap = await getDoc(ref);
+  return snap.exists() ? (snap.data().state || {}) : {};
+}
+
+async function saveState(dateStr, state) {
+  setSyncStatus('syncing', 'Saving…');
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      const ref = doc(db, 'users', currentUser.uid, 'days', dateStr);
+      await setDoc(ref, { state, updatedAt: new Date().toISOString() });
+      setSyncStatus('synced', 'Synced · ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    } catch(e) {
+      setSyncStatus('error', 'Sync failed — check connection');
+    }
+  }, 600); // debounce 600ms
+}
+
+async function loadAllHistory() {
+  const col = collection(db, 'users', currentUser.uid, 'days');
+  const snap = await getDocs(col);
+  const days = [];
+  snap.forEach(d => {
+    if(d.id !== TODAY) days.push({ dateStr: d.id, state: d.data().state || {} });
+  });
+  days.sort((a,b) => b.dateStr.localeCompare(a.dateStr));
+  return days;
+}
+
+// ── In-memory cache for today ──────────
+let _tasks = null;
+let _state = {};
+
+async function lT() {
+  if(!_tasks) _tasks = await loadTasks();
+  return _tasks;
+}
+async function lS() { return _state; }
+
+// ── Auth ───────────────────────────────
+window.signInWithGoogle = async function() {
+  try { await signInWithPopup(auth, provider); }
+  catch(e) { showToast('❌ Sign-in failed: ' + e.message, 'error'); }
+};
+
+window.signOut = async function() {
+  if(!confirm('Sign out?')) return;
+  await fbSignOut(auth);
+};
+
+onAuthStateChanged(auth, async user => {
+  if(user) {
+    currentUser = user;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display   = 'block';
+    // Avatar
+    if(user.photoURL) {
+      document.getElementById('user-photo').src = user.photoURL;
+      document.getElementById('user-photo').style.display = 'block';
+      document.getElementById('user-initials').style.display = 'none';
+    } else {
+      document.getElementById('user-initials').textContent = (user.displayName||user.email||'?')[0].toUpperCase();
+    }
+    setSyncStatus('syncing', 'Loading…');
+    // Load tasks + today state
+    _tasks = await loadTasks();
+    _state = await loadState(TODAY);
+    setSyncStatus('synced', 'Synced');
+    initPage();
+  } else {
+    currentUser = null;
+    _tasks = null; _state = {};
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display   = 'none';
+  }
+});
+
+// ── Page init ─────────────────────────
+function initPage() {
+  document.getElementById('dsub').textContent  = DAYS[now.getDay()]+', '+now.getDate()+' '+MONTHS[now.getMonth()]+' '+now.getFullYear();
+  document.getElementById('dbadge').textContent = DAYS[now.getDay()]+' '+now.getDate()+' '+MONTHS[now.getMonth()];
+  render();
+}
+
+// ── Toggle task ───────────────────────
+window.togItem = async function(sid, iid) {
+  _state[iid] = !_state[iid];
+  document.getElementById('r_'+iid)?.classList.toggle('dn', !!_state[iid]);
+  document.getElementById('c_'+iid)?.classList.toggle('ck', !!_state[iid]);
+  updProg();
+  rfMeta(sid);
+  bStreak();
+  await saveState(TODAY, _state);
+};
+
+function rfMeta(sid) {
+  const sec = _tasks.find(x=>x.id===sid); if(!sec) return;
+  const dn = sec.items.filter(i=>_state[i.id]).length;
+  const el = document.getElementById('m_'+sid); if(el) el.textContent = dn+'/'+sec.items.length+' done';
+}
+
+function updProg() {
+  const tot=totI(_tasks), dn=cntD(_tasks,_state);
+  const p = tot ? Math.round(dn/tot*100) : 0;
+  document.getElementById('pbar').style.width = p+'%';
+  document.getElementById('plbl').textContent = dn+'/'+tot;
+}
+
+// ── Sections/tasks CRUD ───────────────
+window.togSec = function(id) {
+  const b=document.getElementById('b_'+id), c=document.getElementById('cv_'+id); if(!b) return;
+  const h=b.style.display==='none'; b.style.display=h?'':'none'; c.className='chev'+(h?' o':'');
+};
+
+window.delTask = async function(sid, iid) {
+  const sec=_tasks.find(x=>x.id===sid); if(!sec) return;
+  sec.items = sec.items.filter(i=>i.id!==iid);
+  await saveTasks(_tasks); render();
+};
+
+window.delSec = async function(sid) {
+  if(!confirm('Delete this section and all its tasks?')) return;
+  _tasks = _tasks.filter(s=>s.id!==sid);
+  await saveTasks(_tasks); render();
+};
+
+window.showET = function(sid, iid) {
+  hideAll();
+  const sec=_tasks.find(x=>x.id===sid); if(!sec) return;
+  const item=sec.items.find(i=>i.id===iid); if(!item) return;
+  const f=document.getElementById('ef_'+iid); if(!f) return;
+  f.classList.add('v');
+  document.getElementById('et_'+iid).value  = item.text;
+  document.getElementById('es_'+iid).value  = item.sub||'';
+  document.getElementById('eti_'+iid).value = item.time||'';
+  setTimeout(()=>document.getElementById('et_'+iid).focus(), 30);
+};
+
+window.saveET = async function(sid, iid) {
+  const txt=(document.getElementById('et_'+iid).value||'').trim(); if(!txt) return;
+  const sub=(document.getElementById('es_'+iid).value||'').trim();
+  const time=(document.getElementById('eti_'+iid).value||'').trim();
+  const sec=_tasks.find(x=>x.id===sid); if(!sec) return;
+  const item=sec.items.find(i=>i.id===iid); if(!item) return;
+  item.text=txt; item.sub=sub; item.time=time;
+  await saveTasks(_tasks); render();
+};
+
+window.etKey = function(e,sid,iid){ if(e.key==='Enter') saveET(sid,iid); if(e.key==='Escape') render(); };
+
+window.showES = function(sid) {
+  hideAll();
+  const sec=_tasks.find(x=>x.id===sid); if(!sec) return;
+  const f=document.getElementById('sf_'+sid); if(!f) return;
+  f.classList.add('v');
+  document.getElementById('sei_'+sid).value  = sec.icon;
+  document.getElementById('set_'+sid).value  = sec.title;
+  document.getElementById('setg_'+sid).value = sec.tag;
+  document.getElementById('setc_'+sid).value = sec.tc;
+  setTimeout(()=>document.getElementById('set_'+sid).focus(), 30);
+};
+
+window.saveES = async function(sid) {
+  const title=(document.getElementById('set_'+sid).value||'').trim(); if(!title) return;
+  const icon=document.getElementById('sei_'+sid).value||'📝';
+  const tag=(document.getElementById('setg_'+sid).value||'').trim()||'custom';
+  const tc=document.getElementById('setc_'+sid).value;
+  const sec=_tasks.find(x=>x.id===sid); if(!sec) return;
+  sec.title=title; sec.icon=icon; sec.tag=tag; sec.tc=tc;
+  await saveTasks(_tasks); render();
+};
+
+window.esKey = function(e,sid){ if(e.key==='Enter') saveES(sid); if(e.key==='Escape') render(); };
+
+window.showAT = function(sid) {
+  hideAll();
+  const f=document.getElementById('af_'+sid); if(!f) return;
+  f.classList.add('v');
+  document.getElementById('ab_'+sid).style.display='none';
+  setTimeout(()=>document.getElementById('ai_'+sid).focus(), 30);
+};
+
+window.hideAT = function(sid) {
+  const f=document.getElementById('af_'+sid); if(f) f.classList.remove('v');
+  const b=document.getElementById('ab_'+sid); if(b) b.style.display='';
+  ['ai_','ati_'].forEach(p=>{ const el=document.getElementById(p+sid); if(el) el.value=''; });
+};
+
+window.saveAT = async function(sid) {
+  const txt=(document.getElementById('ai_'+sid).value||'').trim(); if(!txt) return;
+  const time=(document.getElementById('ati_'+sid).value||'').trim();
+  const sec=_tasks.find(x=>x.id===sid); if(!sec) return;
+  sec.items.push({id:uid(), text:txt, sub:'', time});
+  await saveTasks(_tasks); render();
+};
+
+window.atKey = function(e,sid){ if(e.key==='Enter') saveAT(sid); if(e.key==='Escape') hideAT(sid); };
+
+window.showNSF = function() {
+  document.getElementById('nsform').classList.add('v');
+  document.getElementById('nsbtn').style.display='none';
+  setTimeout(()=>document.getElementById('ns-ti').focus(), 30);
+};
+
+window.hideNSF = function() {
+  document.getElementById('nsform').classList.remove('v');
+  document.getElementById('nsbtn').style.display='';
+  document.getElementById('ns-ti').value='';
+  document.getElementById('ns-tg').value='';
+};
+
+window.saveNS = async function() {
+  const title=(document.getElementById('ns-ti').value||'').trim(); if(!title) return;
+  const icon=document.getElementById('ns-ic').value||'📝';
+  const tag=(document.getElementById('ns-tg').value||'').trim()||'custom';
+  const tc=document.getElementById('ns-tc').value;
+  _tasks.push({id:uid(), icon, title, tag, tc, items:[]});
+  await saveTasks(_tasks); hideNSF(); render();
+};
+
+window.nsKey = function(e){ if(e.key==='Enter') saveNS(); if(e.key==='Escape') hideNSF(); };
+
+function hideAll() {
+  document.querySelectorAll('.af.v').forEach(f=>{ const id=f.id.replace('af_',''); hideAT(id); });
+  document.querySelectorAll('.eform.v,.sef.v').forEach(f=>f.classList.remove('v'));
+}
+
+window.resetToday = async function() {
+  if(!confirm('Reset all tasks for today?')) return;
+  _state = {};
+  await saveState(TODAY, _state);
+  render();
+};
+
+// ── Tabs ──────────────────────────────
+window.switchTab = function(tab) {
+  document.getElementById('today-panel').style.display   = tab==='today'   ? 'block' : 'none';
+  document.getElementById('history-panel').style.display = tab==='history' ? 'block' : 'none';
+  document.getElementById('tab-today').classList.toggle('active',   tab==='today');
+  document.getElementById('tab-history').classList.toggle('active', tab==='history');
+  if(tab==='history') renderHistory();
+};
+
+// ── Render today ──────────────────────
+function render() {
+  const state = _state, tasks = _tasks;
+  const container = document.getElementById('secs');
+  container.innerHTML = '';
+  tasks.forEach(sec => {
+    const done = sec.items.filter(i=>state[i.id]).length;
+    const div = document.createElement('div'); div.className='section';
+    let rows='';
+    sec.items.forEach(item => {
+      const isDone = !!state[item.id];
+      rows += `<div class="tr${isDone?' dn':''}" id="r_${item.id}">
+        <div class="cb${isDone?' ck':''}" id="c_${item.id}" onclick="togItem('${sec.id}','${item.id}')"></div>
+        <div class="tc" onclick="togItem('${sec.id}','${item.id}')">
+          <div class="tt">${item.text}</div>
+          ${item.sub?`<div class="ts2">${item.sub}</div>`:''}
+        </div>
+        ${item.time?`<div class="tm">${item.time}</div>`:''}
+        <div class="ra">
+          <button class="ib" onclick="showET('${sec.id}','${item.id}')" title="Edit">&#9998;</button>
+          <button class="ib d" onclick="delTask('${sec.id}','${item.id}')" title="Delete">&#10005;</button>
+        </div>
+      </div>
+      <div class="eform" id="ef_${item.id}">
+        <div class="fr">
+          <input class="fi" id="et_${item.id}" placeholder="Task name..." onkeydown="etKey(event,'${sec.id}','${item.id}')">
+          <input class="fis" id="eti_${item.id}" placeholder="Time (opt.)" onkeydown="etKey(event,'${sec.id}','${item.id}')">
+        </div>
+        <div class="fr">
+          <input class="fi" id="es_${item.id}" placeholder="Subtitle / note (opt.)" onkeydown="etKey(event,'${sec.id}','${item.id}')">
+        </div>
+        <div class="fr"><span class="fh">Enter to save · Esc to cancel</span><button class="bc" onclick="render()">Cancel</button><button class="bs" onclick="saveET('${sec.id}','${item.id}')">Save</button></div>
+      </div>`;
+    });
+    div.innerHTML = `
+      <div class="section-card">
+        <div class="sh">
+          <span class="si">${sec.icon}</span>
+          <div class="stw" onclick="togSec('${sec.id}')">
+            <span class="st">${sec.title}</span>
+            <span class="tag ${sec.tc}">${sec.tag}</span>
+          </div>
+          <span class="sm" id="m_${sec.id}">${done}/${sec.items.length} done</span>
+          <button class="ib" onclick="showES('${sec.id}')" title="Edit section">&#9998;</button>
+          <button class="ib d" onclick="delSec('${sec.id}')" title="Delete section">&#128465;</button>
+          <span class="chev o" id="cv_${sec.id}" onclick="togSec('${sec.id}')">&#9660;</span>
+        </div>
+        <div class="sef" id="sf_${sec.id}">
+          <div class="fr">
+            <select class="isel" id="sei_${sec.id}"><option>📝</option><option>⭐</option><option>🔥</option><option>💡</option><option>🎯</option><option>🛠</option><option>📖</option><option>🎓</option><option>📱</option><option>🤖</option><option>📚</option><option>🏋</option><option>🧠</option><option>💼</option><option>🚀</option></select>
+            <input class="fi" id="set_${sec.id}" placeholder="Section title..." onkeydown="esKey(event,'${sec.id}')">
+            <select class="sel" id="setc_${sec.id}"><option value="tb">Blue</option><option value="ta">Amber</option><option value="tp">Purple</option><option value="tg">Green</option><option value="tz">Gray</option></select>
+            <input class="fi" id="setg_${sec.id}" placeholder="Tag..." style="max-width:90px" onkeydown="esKey(event,'${sec.id}')">
+          </div>
+          <div class="fr"><span class="fh">Enter to save · Esc to cancel</span><button class="bc" onclick="render()">Cancel</button><button class="bs" onclick="saveES('${sec.id}')">Save</button></div>
+        </div>
+        <div class="sb" id="b_${sec.id}">
+          ${rows}
+          <div class="af" id="af_${sec.id}">
+            <div class="fr">
+              <input class="fi" id="ai_${sec.id}" placeholder="Task name..." onkeydown="atKey(event,'${sec.id}')">
+              <input class="fis" id="ati_${sec.id}" placeholder="Time (opt.)" onkeydown="atKey(event,'${sec.id}')">
+            </div>
+            <div class="fr"><span class="fh">Enter to save · Esc to cancel</span><button class="bc" onclick="hideAT('${sec.id}')">Cancel</button><button class="bs" onclick="saveAT('${sec.id}')">Add task</button></div>
+          </div>
+          <div class="arb"><button class="aib" id="ab_${sec.id}" onclick="showAT('${sec.id}')"><span style="font-size:15px;line-height:1">+</span>&nbsp;Add task</button></div>
+        </div>
+      </div>`;
+    container.appendChild(div);
+  });
+  updProg(); bStreak();
+}
+
+// ── Render history ────────────────────
+async function renderHistory() {
+  const list = document.getElementById('hist-list');
+  list.innerHTML = '<div class="hist-empty" style="color:var(--color-text-tertiary)">Loading history…</div>';
+  const allDays = await loadAllHistory();
+  list.innerHTML = '';
+
+  // Toolbar
+  const toolbar = document.createElement('div');
+  toolbar.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:1rem;flex-wrap:wrap;';
+  toolbar.innerHTML = `
+    <label class="bs" style="display:flex;align-items:center;gap:5px;padding:6px 14px;cursor:pointer;">
+      ⬆ Import JSON
+      <input type="file" accept=".json" style="display:none" onchange="handleImport(event)">
+    </label>
+    <div style="display:flex;gap:8px;">
+      <button class="bs" onclick="exportHistoryCSV()" style="padding:6px 14px;">⬇ Export CSV</button>
+      <button class="bs" onclick="exportHistoryJSON()" style="padding:6px 14px;">⬇ Export JSON</button>
+    </div>`;
+  list.appendChild(toolbar);
+
+  if(allDays.length===0) {
+    const emp=document.createElement('div'); emp.className='hist-empty';
+    emp.textContent='No history yet — complete tasks today to start tracking!';
+    list.appendChild(emp); return;
+  }
+
+  // Summary
+  const tot = allDays.length;
+  const perfect = allDays.filter(d=>cntD(_tasks,d.state)===totI(_tasks)&&totI(_tasks)>0).length;
+  const summary = document.createElement('div');
+  summary.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem;padding:10px 14px;background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:0.78rem;color:var(--color-text-secondary);';
+  summary.innerHTML=`
+    <span>📅 <b style="color:var(--color-text-primary)">${tot}</b> days recorded</span>
+    <span>✓ <b style="color:#4ade80">${perfect}</b> perfect days</span>
+    <span>📊 <b style="color:var(--color-text-primary)">${tot>0?Math.round(perfect/tot*100):0}%</b> completion rate</span>`;
+  list.appendChild(summary);
+
+  allDays.forEach(({dateStr, state}) => {
+    const d = new Date(dateStr+'T00:00:00');
+    const dn = cntD(_tasks, state), total = totI(_tasks);
+    const isPerfect = total>0 && dn===total;
+    const dateLabel = DAYS[d.getDay()]+', '+d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+    const dayEl = document.createElement('div');
+    dayEl.className = 'hist-day hist-collapsed';
+    let secRows='';
+    _tasks.forEach(sec=>{
+      const secDone=sec.items.filter(i=>state[i.id]).length;
+      secRows+=`<div class="hist-sec-title">${sec.icon} ${sec.title} <span style="font-weight:400">${secDone}/${sec.items.length}</span></div>`;
+      sec.items.forEach(item=>{
+        const ck=!!state[item.id];
+        secRows+=`<div class="hist-task">
+          <div class="hist-cb${ck?' ck':''}"></div>
+          <span class="hist-task-text${ck?' ck':''}">${item.text}</span>
+          ${item.time?`<span style="font-size:0.7rem;color:var(--color-text-tertiary);font-family:var(--font-mono)">${item.time}</span>`:''}
+        </div>`;
+      });
+    });
+    dayEl.innerHTML=`
+      <div class="hist-day-header" onclick="this.closest('.hist-day').classList.toggle('hist-collapsed')">
+        <span class="hist-day-label">${dateLabel}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="hist-day-score${isPerfect?' perfect':''}">${dn}/${total} done${isPerfect?' ✓':''}</span>
+          <span class="hist-chev">&#9660;</span>
+        </div>
+      </div>
+      <div class="hist-body">${secRows}</div>`;
+    list.appendChild(dayEl);
+  });
+}
+
+// ── Week streak ───────────────────────
+async function bStreak() {
+  const row=document.getElementById('srow'); row.innerHTML='';
+  const todayDow=now.getDay();
+  const sunday=new Date(now); sunday.setDate(now.getDate()-todayDow);
+  for(let i=0;i<7;i++){
+    const d=new Date(sunday); d.setDate(sunday.getDate()+i);
+    const isToday=d.toDateString()===now.toDateString();
+    const dateStr=d.toISOString().slice(0,10);
+    let s = isToday ? _state : {};
+    if(!isToday){
+      try{ const snap=await getDoc(doc(db,'users',currentUser.uid,'days',dateStr)); s=snap.exists()?(snap.data().state||{}):{};  }catch(e){}
+    }
+    const tot=totI(_tasks), dn=cntD(_tasks,s);
+    const dot=document.createElement('div');
+    let cls='sd';
+    if(tot>0&&dn===tot) cls+=' dn';
+    if(isToday) cls+=' today';
+    dot.className=cls;
+    dot.title=DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()];
+    dot.textContent=DAYS[d.getDay()][0];
+    row.appendChild(dot);
+  }
+}
+
+// ── Export / Import ───────────────────
+window.exportHistoryCSV = async function() {
+  const allDays = await loadAllHistory();
+  let csv='Date,Day,Section,Task,Done,Time\n';
+  allDays.forEach(({dateStr,state})=>{
+    const d=new Date(dateStr+'T00:00:00');
+    _tasks.forEach(sec=>sec.items.forEach(item=>{
+      csv+=`"${dateStr}","${DAYS[d.getDay()]}","${sec.title}","${item.text}","${state[item.id]?'Yes':'No'}","${item.time||''}"\n`;
+    }));
+  });
+  dlFile('learning_history.csv', csv, 'text/csv');
+};
+
+window.exportHistoryJSON = async function() {
+  const allDays = await loadAllHistory();
+  const out = allDays.map(({dateStr,state})=>{
+    const d=new Date(dateStr+'T00:00:00');
+    return { date:dateStr, day:DAYS[d.getDay()], sections:_tasks.map(sec=>({
+      title:sec.title,icon:sec.icon,tag:sec.tag,
+      tasks:sec.items.map(item=>({task:item.text,done:!!state[item.id],time:item.time||''}))
+    }))};
+  });
+  dlFile('learning_history.json', JSON.stringify(out,null,2), 'application/json');
+};
+
+window.handleImport = async function(event) {
+  const file=event.target.files[0]; if(!file) return;
+  event.target.value='';
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    let data;
+    try{ data=JSON.parse(e.target.result); }
+    catch(err){ showToast('❌ Invalid JSON file','error'); return; }
+    if(!Array.isArray(data)){ showToast('❌ Expected array of days','error'); return; }
+    let imported=0, skipped=0;
+    for(const entry of data){
+      if(!entry.date||!entry.sections){ skipped++; continue; }
+      const d=new Date(entry.date+'T00:00:00');
+      if(isNaN(d)){ skipped++; continue; }
+      const state={};
+      entry.sections.forEach(esec=>{
+        const sec=_tasks.find(t=>t.title===esec.title); if(!sec) return;
+        esec.tasks.forEach(etask=>{
+          const item=sec.items.find(i=>i.text===etask.task); if(!item) return;
+          if(etask.done) state[item.id]=true;
+        });
+      });
+      // Merge with existing (don't overwrite)
+      const existing = await loadState(entry.date);
+      const merged = Object.assign({}, state, existing);
+      await saveState(entry.date, merged);
+      imported++;
+    }
+    showImportModal(imported, skipped);
+  };
+  reader.readAsText(file);
+};
+
+function dlFile(name,content,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+function showImportModal(imported, skipped){
+  document.getElementById('import-modal')?.remove();
+  const m=document.createElement('div');
+  m.id='import-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  m.innerHTML=`
+    <div style="background:var(--color-background-primary);border:1px solid var(--color-border-secondary);border-radius:12px;padding:28px 28px 22px;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+      <div style="font-size:2rem;margin-bottom:10px;text-align:center;">✅</div>
+      <div style="font-size:1rem;font-weight:600;color:var(--color-text-primary);margin-bottom:8px;text-align:center;">Import Complete</div>
+      <div style="font-size:0.82rem;color:var(--color-text-secondary);text-align:center;line-height:1.6;margin-bottom:18px;">
+        <span style="color:#4ade80;font-weight:600">${imported}</span> day${imported!==1?'s':''} imported to Firestore
+        ${skipped>0?`<br><span style="color:#fbbf24">${skipped} skipped</span>`:''}
+        <br><span style="color:var(--color-text-tertiary);font-size:0.75rem;">Synced to your account — available on all devices</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="bs" onclick="document.getElementById('import-modal').remove();renderHistory();" style="padding:7px 20px;">View History</button>
+        <button class="bc" onclick="document.getElementById('import-modal').remove();">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{ if(e.target===m) m.remove(); });
+}
+
+function showToast(msg, type){
+  document.getElementById('toast')?.remove();
+  const t=document.createElement('div'); t.id='toast';
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:8px;font-size:0.82rem;font-family:var(--font-sans);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4);background:${type==='error'?'#3d1515':'#1a3a25'};color:${type==='error'?'#f87171':'#4ade80'};border:1px solid ${type==='error'?'#7f1d1d':'#2d6a3f'};`;
+  t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+</script>
+</body>
+</html>
